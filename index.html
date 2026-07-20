@@ -903,7 +903,16 @@
     }catch(e){}
   }
   function playMoveSound(){ tone(820,0.1,'triangle',0.28,0); tone(1400,0.07,'sine',0.16,0.02); }
-  function playInvalidSound(){ tone(160,0.18,'sawtooth',0.08,0); }
+
+  let invalidAudio = null;
+  function playInvalidSound(){
+    if(!soundOn) return;
+    try{
+      if(!invalidAudio) invalidAudio = new Audio('Tudum.mp3');
+      invalidAudio.currentTime = 0;
+      invalidAudio.play().catch(()=>{});
+    }catch(e){}
+  }
   function playWinSound(){ [523,659,784,1047].forEach((f,i)=> tone(f,0.32,'triangle',0.11,i*0.11)); }
 
   // ---------------- SEGMENTED CONTROL ----------------
