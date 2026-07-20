@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tsparticles/confetti@4.3.2/tsparticles.confetti.bundle.min.js"></script>
 <link rel="manifest" id="manifestLink" href="">
 <link rel="apple-touch-icon" id="appleTouchIcon" href="">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -948,11 +949,15 @@
   const TIER = ['d1','d2','d3','d4','d5','d6','d7'];
 
   // ---------------- THEME ----------------
+  const THEME_KEY = 'tower-theme';
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let theme = prefersDark ? 'dark' : 'light';
+  let storedTheme = null;
+  try{ storedTheme = localStorage.getItem(THEME_KEY); }catch(e){}
+  let theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : (prefersDark ? 'dark' : 'light');
   function applyTheme(){
     document.documentElement.setAttribute('data-theme', theme);
     themeIcon.className = theme === 'dark' ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
   }
   applyTheme();
   themeToggle.addEventListener('click', ()=>{
@@ -1301,6 +1306,23 @@
     setTimeout(()=> pegEl.classList.remove('invalid'), 320);
   }
 
+  function fireWinConfetti(){
+    if(typeof confetti !== 'function') return;
+    const colors = ['#FF6B6B','#4ECDC4','#FFD93D','#A78BFA','#06D6A0','#FF9F1C','#3A86FF'];
+    const shared = {
+      shapes: ['square'],
+      scalar: 1.6,
+      flat: false,
+      gravity: 0.9,
+      drift: 0,
+      ticks: 260,
+      colors
+    };
+    confetti({ ...shared, particleCount: 60, angle: 60, spread: 55, startVelocity: 45, origin: { x: 0, y: 0.75 } });
+    confetti({ ...shared, particleCount: 60, angle: 120, spread: 55, startVelocity: 45, origin: { x: 1, y: 0.75 } });
+    confetti({ ...shared, particleCount: 80, angle: 90, spread: 100, startVelocity: 55, origin: { x: 0.5, y: 0.4 }, scalar: 1.3 });
+  }
+
   function checkWin(){
     if(pegs[2].length === numBlades){
       locked = true;
@@ -1318,6 +1340,7 @@
       updateBestNote();
       playWinSound();
       haptic([10,40,10,40,20]);
+      fireWinConfetti();
 
       const optimal = Math.pow(2, numBlades) - 1;
 
