@@ -417,6 +417,10 @@
   .sheet{
     width:100%;
     max-width:480px;
+    max-height:88vh;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
     background:var(--surface);
     border-radius:26px 26px 0 0;
     padding:10px 22px calc(env(safe-area-inset-bottom) + 24px);
@@ -713,8 +717,65 @@
     flex-shrink:0;
   }
   .admin-avatar img{ width:100%;height:100%;object-fit:cover; }
-  .admin-info{ min-width:0; }
+  .admin-info{ min-width:0; flex:1; }
   .admin-name{ font-size:14px; font-weight:600; color:var(--text); }
+  .admin-levels{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-top:4px;
+  }
+  .admin-level-chip{
+    font-size:10px;
+    font-weight:600;
+    color:var(--text-muted);
+    background:var(--surface-2);
+    padding:2px 7px;
+    border-radius:20px;
+  }
+  .admin-level-chip b{ color:var(--text); }
+  .admin-total{
+    font-size:11px;
+    color:var(--text-muted);
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .admin-chevron{
+    font-size:13px;
+    color:var(--text-muted);
+    transition:transform .25s var(--ease-out);
+    flex-shrink:0;
+  }
+  .admin-row.open .admin-chevron{ transform:rotate(180deg); }
+
+  /* ---------- YOUR LEVELS (own progress) ---------- */
+  .level-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 2px;
+    border-bottom:1px solid var(--border);
+  }
+  .level-row:last-child{ border-bottom:none; }
+  .level-row .level-name{ font-size:13.5px; font-weight:600; color:var(--text); }
+  .level-row .level-sub{ font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .level-row .level-wins{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:16px;
+    color:var(--accent);
+    text-align:right;
+    min-width:52px;
+  }
+  .level-row .level-wins small{
+    display:block;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:9px;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
   .admin-id{ font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   @media (prefers-reduced-motion: reduce){
@@ -780,7 +841,7 @@
   </div>
 
   <div class="bottombar">
-    <button class="bb-icon" id="resetIconBtn" aria-label="Reset"><i class="bi bi-arrow-counterclockwise"></i></button>
+    <button class="bb-icon" id="resetIconBtn" aria-label="Undo last move"><i class="bi bi-arrow-90deg-left"></i></button>
     <button class="bb-primary" id="newGameBtn"><i class="bi bi-play-fill"></i> New Game</button>
   </div>
 
@@ -883,9 +944,13 @@
       <div class="account-name" id="accountName">–</div>
       <div class="account-email" id="accountEmail">–</div>
     </div>
+    <div id="yourLevelsSection">
+      <h2 style="margin-top:18px;">Your Levels</h2>
+      <div id="yourLevelsList"></div>
+    </div>
     <div id="accountMembersSection" style="display:none;">
       <h2 style="margin-top:18px;">Members <span id="accountMemberCount" style="color:var(--text-muted);font-weight:500;font-size:14px;"></span></h2>
-      <div id="accountMemberList" style="max-height:38vh;overflow-y:auto;"></div>
+      <div id="accountMemberList"></div>
     </div>
     <div class="sheet-actions">
       <button class="sheet-btn ghost" id="accountCloseBtn">Close</button>
@@ -898,7 +963,8 @@
   <div class="sheet">
     <div class="sheet-handle"></div>
     <h2>Users <span id="adminCount" style="color:var(--text-muted);font-weight:500;font-size:14px;"></span></h2>
-    <div id="adminList" style="max-height:50vh;overflow-y:auto;"></div>
+    <p style="text-align:center;font-size:11.5px;color:var(--text-muted);margin-top:-6px;">View only — founder access cannot edit any player's scores.</p>
+    <div id="adminList"></div>
     <div class="sheet-actions">
       <button class="sheet-btn ghost" id="adminCloseBtn">Close</button>
     </div>
@@ -943,10 +1009,14 @@
   let timerStarted = false;
   let bestByDifficulty = {};
   let bestTimeByDifficulty = {};
+  let levelWins = {};      // { 3: winsAtEasy, 4: winsAtMedium, ... } — loaded from / saved to Firestore
   let locked = false;
   let pendingConfirmAction = null;
+  let moveHistory = []; // stack of {from, to} peg indices — powers the one-step undo button
 
   const TIER = ['d1','d2','d3','d4','d5','d6','d7'];
+  const LEVELS = [3,4,5,6,7];
+  const LEVEL_LABELS = { 3:'Easy', 4:'Medium', 5:'Hard', 6:'Expert', 7:'Master' };
 
   // ---------------- THEME ----------------
   const THEME_KEY = 'tower-theme';
@@ -1159,6 +1229,7 @@
     seconds = 0;
     timerStarted = false;
     locked = false;
+    moveHistory = [];
     clearInterval(timerInterval);
     statOptimal.textContent = Math.pow(2, numBlades) - 1;
     updateBestNote();
@@ -1274,6 +1345,7 @@
     if(target === undefined || moving < target){
       fromStack.pop();
       toStack.push(moving);
+      moveHistory.push({ from: selected, to: idx });
       moves++;
       startTimerIfNeeded();
       playMoveSound();
@@ -1290,6 +1362,22 @@
       selected = null;
       renderBoard();
     }
+  }
+
+  // Reverses exactly the most recent move — puts the disc back where it
+  // came from and drops the move count by one. Does not touch the timer
+  // or wins, and does nothing once the puzzle is already solved.
+  function undoLastMove(){
+    if(locked){ showToast('Already solved — start a new game'); return; }
+    if(moveHistory.length === 0){ showToast('No moves to undo'); return; }
+    const last = moveHistory.pop();
+    const disc = pegs[last.to].pop();
+    pegs[last.from].push(disc);
+    moves = Math.max(0, moves - 1);
+    selected = null;
+    renderStats();
+    renderBoard();
+    haptic(6);
   }
 
   function flashLanding(idx){
@@ -1328,6 +1416,7 @@
       locked = true;
       clearInterval(timerInterval);
       wins++;
+      levelWins[numBlades] = (levelWins[numBlades] || 0) + 1;
       const prevBest = bestByDifficulty[numBlades];
       const isNewBest = !prevBest || moves < prevBest;
       if(isNewBest) bestByDifficulty[numBlades] = moves;
@@ -1336,8 +1425,11 @@
       const isNewBestTime = prevBestTime === undefined || seconds < prevBestTime;
       if(isNewBestTime) bestTimeByDifficulty[numBlades] = seconds;
 
+      saveWinToFirestore(numBlades, isNewBest, isNewBestTime);
+
       renderStats();
       updateBestNote();
+      renderYourLevels();
       playWinSound();
       haptic([10,40,10,40,20]);
       fireWinConfetti();
@@ -1493,11 +1585,7 @@
   });
   document.getElementById('resetIconBtn').addEventListener('click', ()=>{
     if(requireLogin()) return;
-    if(moves > 0 && !locked){
-      askConfirm('Reset this run?', 'Moves and timer will start over.', initGame);
-    } else {
-      initGame();
-    }
+    undoLastMove();
   });
 
   soundBtn.addEventListener('click', ()=>{
@@ -1511,6 +1599,33 @@
   });
 
   // ---------------- AUTH (Firebase) ----------------
+  //
+  // DATA MODEL: users/{uid} = {
+  //   name, email, photoURL, lastLogin,
+  //   levels: {
+  //     "3": { wins, bestMoves, bestTime, lastPlayed },   // Easy
+  //     "4": { ... },                                     // Medium
+  //     "5": { ... },                                     // Hard
+  //     "6": { ... },                                     // Expert
+  //     "7": { ... }                                      // Master
+  //   }
+  // }
+  //
+  // IMPORTANT — client code alone can't enforce "founder can view but not
+  // write": anyone can open dev tools and call Firestore directly. To make
+  // this a real rule, set the following in Firebase Console →
+  // Firestore Database → Rules:
+  //
+  //   rules_version = '2';
+  //   service cloud.firestore {
+  //     match /databases/{database}/documents {
+  //       match /users/{userId} {
+  //         allow read: if request.auth != null; // any signed-in user (incl. founder) can view
+  //         allow write: if request.auth != null && request.auth.uid == userId; // only the owner can write their own doc
+  //       }
+  //     }
+  //   }
+  //
   // Fill in your Firebase project config below (Firebase console → Project settings).
   const firebaseConfig = {
   apiKey: "AIzaSyBYIyLhuI7muUpuJzH2jvG7LJbd0zMcNqQ",
@@ -1597,6 +1712,72 @@
     }catch(e){ console.warn('Could not save login details', e); }
   }
 
+  // Increment this player's win count for the given level (numBlades) and,
+  // if applicable, update their best-moves / best-time for that level.
+  // Only ever writes to the signed-in user's OWN document.
+  // NOTE: must use update() (not set/merge) so the dot-path keys below are
+  // parsed as a nested "levels.<n>.wins" field rather than a literal
+  // top-level field name containing dots.
+  async function saveWinToFirestore(level, isNewBest, isNewBestTime){
+    if(!db || !currentUser) return;
+    const key = String(level);
+    const updates = {};
+    updates['levels.' + key + '.wins'] = firebase.firestore.FieldValue.increment(1);
+    updates['levels.' + key + '.lastPlayed'] = firebase.firestore.FieldValue.serverTimestamp();
+    if(isNewBest) updates['levels.' + key + '.bestMoves'] = moves;
+    if(isNewBestTime) updates['levels.' + key + '.bestTime'] = seconds;
+    const ref = db.collection('users').doc(currentUser.uid);
+    try{
+      await ref.update(updates);
+    }catch(e){
+      // Doc might not exist yet in a rare race — create it, then retry as a real update.
+      try{
+        await ref.set({}, { merge: true });
+        await ref.update(updates);
+      }catch(e2){ console.warn('Could not save level win', e2); }
+    }
+  }
+
+  // Loads this player's per-level wins / bests from their own Firestore doc.
+  async function loadUserLevelData(uid){
+    levelWins = {}; bestByDifficulty = {}; bestTimeByDifficulty = {}; wins = 0;
+    if(!db || !uid) { renderYourLevels(); renderStats(); updateBestNote(); return; }
+    try{
+      const doc = await db.collection('users').doc(uid).get();
+      const data = doc.exists ? (doc.data() || {}) : {};
+      const levels = data.levels || {};
+      LEVELS.forEach(n=>{
+        const lv = levels[String(n)] || {};
+        levelWins[n] = lv.wins || 0;
+        wins += levelWins[n];
+        if(lv.bestMoves !== undefined) bestByDifficulty[n] = lv.bestMoves;
+        if(lv.bestTime !== undefined) bestTimeByDifficulty[n] = lv.bestTime;
+      });
+    }catch(e){ console.warn('Could not load level data', e); }
+    renderYourLevels();
+    renderStats();
+    updateBestNote();
+  }
+
+  // Renders the "Your Levels" list in the account sheet — how many times
+  // this signed-in player has won at each difficulty.
+  function renderYourLevels(){
+    const list = document.getElementById('yourLevelsList');
+    if(!list) return;
+    list.innerHTML = '';
+    LEVELS.forEach(n=>{
+      const row = document.createElement('div');
+      row.className = 'level-row';
+      const w = levelWins[n] || 0;
+      const best = bestByDifficulty[n];
+      row.innerHTML =
+        '<div><div class="level-name">' + LEVEL_LABELS[n] + '</div>' +
+          '<div class="level-sub">' + n + ' blades' + (best ? ' · best ' + best + ' moves' : '') + '</div></div>' +
+        '<div class="level-wins">' + w + '<small>' + (w === 1 ? 'win' : 'wins') + '</small></div>';
+      list.appendChild(row);
+    });
+  }
+
   async function signInWithGoogle(){
     if(!auth){
       setLoginStatus('Firebase isn\'t configured or failed to load — see message above.');
@@ -1648,13 +1829,30 @@
       listEl.innerHTML = '';
       snap.forEach(doc=>{
         const d = doc.data();
+        const levels = d.levels || {};
+        let totalWins = 0;
+        const chips = LEVELS.map(n=>{
+          const lv = levels[String(n)] || {};
+          const w = lv.wins || 0;
+          totalWins += w;
+          return '<span class="admin-level-chip">' + LEVEL_LABELS[n] + ' <b>' + w + '</b></span>';
+        }).join('');
         const row = document.createElement('div');
         row.className = 'admin-row';
         row.innerHTML =
           '<div class="admin-avatar">' + (d.photoURL ? '<img src="'+d.photoURL+'" alt="">' : '<i class="bi bi-person-fill"></i>') + '</div>' +
           '<div class="admin-info">' +
             '<div class="admin-name">' + (d.name ? escapeHtml(d.name) : 'No name') + '</div>' +
-          '</div>';
+            '<div class="admin-levels" style="display:none;">' + chips + '</div>' +
+          '</div>' +
+          '<div class="admin-total" style="display:none;">' + totalWins + ' win' + (totalWins === 1 ? '' : 's') + '</div>' +
+          '<i class="bi bi-chevron-down admin-chevron"></i>';
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', ()=>{
+          const isOpen = row.classList.toggle('open');
+          row.querySelector('.admin-levels').style.display = isOpen ? 'flex' : 'none';
+          row.querySelector('.admin-total').style.display = isOpen ? 'block' : 'none';
+        });
         listEl.appendChild(row);
       });
       if(snap.empty) listEl.innerHTML = '<p style="text-align:center">No members yet.</p>';
@@ -1686,9 +1884,13 @@
 
   document.getElementById('googleLoginBtn').addEventListener('click', signInWithGoogle);
   document.getElementById('accountCloseBtn').addEventListener('click', ()=> closeSheet(accountSheet));
-  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-    if(auth) await auth.signOut();
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
     closeSheet(accountSheet);
+    askConfirm('Log out?', 'You\'ll need to sign in again to keep playing.', async ()=>{
+      if(auth) await auth.signOut();
+    }, ()=>{
+      openSheet(accountSheet);
+    });
   });
 
   accountBtn.addEventListener('click', ()=>{
@@ -1713,7 +1915,10 @@
 
   if(auth){
     auth.getRedirectResult().then((result)=>{
-      if(result && result.user) saveOwnLoginDetails(result.user);
+      if(result && result.user){
+        saveOwnLoginDetails(result.user);
+        loadUserLevelData(result.user.uid);
+      }
     }).catch((e)=>{
       console.warn('Redirect result error', e);
       setLoginStatus('Sign-in failed: ' + (e && e.message ? e.message : e));
@@ -1725,9 +1930,14 @@
       if(user){
         renderAccountSheet();
         closeSheet(loginSheet);
+        loadUserLevelData(user.uid);
       } else {
         closeSheet(accountSheet);
         closeSheet(adminSheet);
+        levelWins = {}; bestByDifficulty = {}; bestTimeByDifficulty = {}; wins = 0;
+        renderYourLevels();
+        renderStats();
+        updateBestNote();
       }
     });
   }
