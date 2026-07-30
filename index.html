@@ -679,6 +679,55 @@
   }
   .demo-caption b{ color:var(--accent); }
 
+  /* ---------- HOW-TO-PLAY VIDEO TOGGLE ---------- */
+  .video-toggle-btn{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    width:100%;
+    background:var(--surface-2);
+    border:none;
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:14px;
+    font-weight:600;
+    padding:12px 14px;
+    border-radius:var(--radius-md);
+    cursor:pointer;
+    margin:0 0 12px;
+  }
+  .video-toggle-btn i{ font-size:14px; color:var(--text-muted); transition:transform .25s var(--ease-out); }
+  .video-toggle-btn.open i{ transform:rotate(180deg); }
+  .video-toggle-btn span{ display:flex; align-items:center; gap:8px; }
+  .video-toggle-btn .bi-play-circle{ color:var(--accent); font-size:16px; }
+
+  .video-wrap{
+    overflow:hidden;
+    max-height:0;
+    opacity:0;
+    border-radius:var(--radius-md);
+    margin:0 0 0;
+    display:flex;
+    justify-content:center;
+    transition:max-height .35s var(--ease-out), opacity .3s ease, margin .35s var(--ease-out);
+  }
+  .video-wrap.open{
+    max-height:70vh;
+    opacity:1;
+    margin:0 0 16px;
+  }
+  .video-wrap video{
+    width:auto;
+    max-width:100%;
+    height:auto;
+    max-height:70vh;
+    display:block;
+    border-radius:var(--radius-md);
+    background:#000;
+    margin:0 auto;
+    object-fit:contain;
+  }
+
   @media (min-width:520px){
     .peg-rod{ height:250px; }
     .disc{ height:32px; }
@@ -934,6 +983,13 @@
       <li>Move the whole stack from peg <b>A</b> to peg <b>C</b>.</li>
       <li>Fewer moves means a cleaner solve — optimal moves = 2ⁿ − 1.</li>
     </ul>
+    <button class="video-toggle-btn" id="videoToggleBtn" aria-expanded="false">
+      <span><i class="bi bi-play-circle"></i>Watch video tutorial</span>
+      <i class="bi bi-chevron-down"></i>
+    </button>
+    <div class="video-wrap" id="videoWrap">
+      <video id="howVideo" src="tower.mp4" playsinline controls preload="none"></video>
+    </div>
     <div class="demo-wrap">
       <div class="demo-caption-top">Optimal solve · 3 blades</div>
       <div class="demo-board" id="demoBoard"></div>
@@ -1631,7 +1687,27 @@
   });
 
   document.getElementById('infoBtn').addEventListener('click', ()=>{ openSheet(howSheet); startDemo(); });
-  document.getElementById('howCloseBtn').addEventListener('click', ()=>{ closeSheet(howSheet); stopDemo(); });
+  document.getElementById('howCloseBtn').addEventListener('click', ()=>{ closeSheet(howSheet); stopDemo(); hideHowVideo(); });
+
+  // ---------------- HOW-TO-PLAY VIDEO TOGGLE ----------------
+  const videoToggleBtn = document.getElementById('videoToggleBtn');
+  const videoWrap = document.getElementById('videoWrap');
+  const howVideo = document.getElementById('howVideo');
+
+  function hideHowVideo(){
+    videoWrap.classList.remove('open');
+    videoToggleBtn.classList.remove('open');
+    videoToggleBtn.setAttribute('aria-expanded', 'false');
+    if(howVideo && !howVideo.paused) howVideo.pause();
+  }
+
+  videoToggleBtn.addEventListener('click', ()=>{
+    haptic(4);
+    const isOpen = videoWrap.classList.toggle('open');
+    videoToggleBtn.classList.toggle('open', isOpen);
+    videoToggleBtn.setAttribute('aria-expanded', String(isOpen));
+    if(!isOpen && howVideo && !howVideo.paused){ howVideo.pause(); }
+  });
 
   document.getElementById('winCloseBtn').addEventListener('click', ()=> closeSheet(winSheet));
   document.getElementById('winAgainBtn').addEventListener('click', ()=>{ closeSheet(winSheet); initGame(); });
@@ -1640,7 +1716,7 @@
     sheet.addEventListener('click', (e)=>{
       if(e.target === sheet){
         closeSheet(sheet);
-        if(sheet === howSheet) stopDemo();
+        if(sheet === howSheet){ stopDemo(); hideHowVideo(); }
       }
     });
   });
