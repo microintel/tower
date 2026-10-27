@@ -7,13 +7,9 @@
 <title>Tower</title>
 <link rel="manifest" href="manifest.json">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tsparticles/confetti@4.3.2/tsparticles.confetti.bundle.min.js"></script>
+<link rel="stylesheet" href="lib/lib.css">
+<link rel="stylesheet" href="lib/bootstrap-icons.css">
+<script src="lib/confetti.js"></script>
 <link rel="manifest" id="manifestLink" href="">
 <link rel="apple-touch-icon" id="appleTouchIcon" href="">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -152,14 +148,14 @@
 
   /* ---------- LIQUID GLASS SHARED LAYER ---------- */
   .icon-btn, .theme-toggle, .segmented .thumb, .sheet-btn.ghost, .sheet-btn.solid,
-  .avatar-btn, .provider-btn, .logout-btn, .stat{
+  .stat{
     position:relative;
     isolation:isolate;
     backdrop-filter:blur(20px) saturate(180%);
     -webkit-backdrop-filter:blur(20px) saturate(180%);
   }
   .icon-btn::before, .theme-toggle::before, .segmented .thumb::before, .sheet-btn.ghost::before,
-  .sheet-btn.solid::before, .avatar-btn::before, .provider-btn::before, .logout-btn::before, .stat::before{
+  .sheet-btn.solid::before, .stat::before{
     content:"";
     position:absolute;
     inset:0;
@@ -172,7 +168,7 @@
     transition:opacity .25s ease;
   }
   .icon-btn::after, .theme-toggle::after, .segmented .thumb::after, .sheet-btn.ghost::after,
-  .sheet-btn.solid::after, .avatar-btn::after, .provider-btn::after, .logout-btn::after, .stat::after{
+  .sheet-btn.solid::after, .stat::after{
     content:"";
     position:absolute;
     inset:0;
@@ -181,7 +177,7 @@
     pointer-events:none;
     z-index:1;
   }
-  .icon-btn:active::before, .avatar-btn:active::before, .logout-btn:active::before,
+  .icon-btn:active::before,
   .sheet-btn:active::before, .segmented .thumb:active::before{ opacity:.5; }
 
   .icon-btn{
@@ -734,170 +730,6 @@
     .board-wrap{ min-height:380px; }
   }
 
-  /* ---------- AUTH / ACCOUNT ---------- */
-  .avatar-btn{
-    width:38px;height:38px;
-    border-radius:50%;
-    border:none;
-    background:var(--glass-bg);
-    color:var(--text);
-    display:flex;align-items:center;justify-content:center;
-    font-size:16px;
-    cursor:pointer;
-    box-shadow:var(--shadow-glass);
-    padding:0;
-    overflow:hidden;
-    transition:transform .15s var(--ease-spring), box-shadow .15s ease;
-  }
-  .avatar-btn:active{ transform:scale(.88); box-shadow:var(--shadow-glass-active); }
-  .avatar-btn img{ width:100%;height:100%;object-fit:cover; }
-  .avatar-btn.needs-login{
-    color:var(--accent);
-    box-shadow:var(--shadow-glass), 0 0 0 2px var(--accent) inset;
-  }
-
-  .login-providers{
-    display:flex;
-    justify-content:center;
-    gap:18px;
-    margin:22px 0 8px;
-  }
-  .provider-btn{
-    width:56px;height:56px;
-    border-radius:50%;
-    border:none;
-    display:flex;align-items:center;justify-content:center;
-    font-size:24px;
-    cursor:pointer;
-    box-shadow:var(--shadow-glass);
-    transition:transform .15s var(--ease-spring), box-shadow .15s ease;
-  }
-  .provider-btn:active{ transform:scale(.9); box-shadow:var(--shadow-glass-active); }
-  .provider-btn.google{ background:rgba(255,255,255,.9); color:#EA4335; border:1px solid var(--glass-border); }
-
-  .account-header{
-    position:relative;
-    display:flex;
-    justify-content:flex-end;
-  }
-  .logout-btn{
-    position:absolute;
-    top:2px; right:0;
-    width:36px;height:36px;
-    border-radius:50%;
-    border:none;
-    background:var(--glass-bg-2);
-    color:var(--danger);
-    display:flex;align-items:center;justify-content:center;
-    font-size:15px;
-    cursor:pointer;
-    box-shadow:var(--shadow-glass);
-    transition:transform .15s var(--ease-spring), box-shadow .15s ease;
-  }
-  .logout-btn:active{ transform:scale(.9); box-shadow:var(--shadow-glass-active); }
-  .account-center{ text-align:center; padding-top:4px; }
-  .account-avatar-lg{
-    width:80px;height:80px;
-    border-radius:50%;
-    margin:0 auto 14px;
-    background:var(--surface-2);
-    display:flex;align-items:center;justify-content:center;
-    font-size:32px;
-    color:var(--text-muted);
-    overflow:hidden;
-  }
-  .account-avatar-lg img{ width:100%;height:100%;object-fit:cover; }
-  .account-name{
-    font-family:var(--font-display);
-    font-weight:600;
-    font-size:19px;
-    margin-bottom:3px;
-  }
-  .account-email{
-    font-size:13px;
-    color:var(--text-muted);
-  }
-
-  .admin-row{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:9px 0;
-    border-bottom:1px solid var(--border);
-  }
-  .admin-row:last-child{ border-bottom:none; }
-  .admin-avatar{
-    width:38px;height:38px;
-    border-radius:50%;
-    background:var(--surface-2);
-    display:flex;align-items:center;justify-content:center;
-    font-size:16px;
-    color:var(--text-muted);
-    overflow:hidden;
-    flex-shrink:0;
-  }
-  .admin-avatar img{ width:100%;height:100%;object-fit:cover; }
-  .admin-info{ min-width:0; flex:1; }
-  .admin-name{ font-size:14px; font-weight:600; color:var(--text); }
-  .admin-levels{
-    display:flex;
-    flex-wrap:wrap;
-    gap:4px;
-    margin-top:4px;
-  }
-  .admin-level-chip{
-    font-size:10px;
-    font-weight:600;
-    color:var(--text-muted);
-    background:var(--surface-2);
-    padding:2px 7px;
-    border-radius:20px;
-  }
-  .admin-level-chip b{ color:var(--text); }
-  .admin-total{
-    font-size:11px;
-    color:var(--text-muted);
-    font-weight:600;
-    white-space:nowrap;
-  }
-  .admin-chevron{
-    font-size:13px;
-    color:var(--text-muted);
-    transition:transform .25s var(--ease-out);
-    flex-shrink:0;
-  }
-  .admin-row.open .admin-chevron{ transform:rotate(180deg); }
-
-  /* ---------- YOUR LEVELS (own progress) ---------- */
-  .level-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:9px 2px;
-    border-bottom:1px solid var(--border);
-  }
-  .level-row:last-child{ border-bottom:none; }
-  .level-row .level-name{ font-size:13.5px; font-weight:600; color:var(--text); }
-  .level-row .level-sub{ font-size:11px; color:var(--text-muted); margin-top:1px; }
-  .level-row .level-wins{
-    font-family:var(--font-display);
-    font-weight:700;
-    font-size:16px;
-    color:var(--accent);
-    text-align:right;
-    min-width:52px;
-  }
-  .level-row .level-wins small{
-    display:block;
-    font-family:var(--font-body);
-    font-weight:600;
-    font-size:9px;
-    color:var(--text-muted);
-    text-transform:uppercase;
-    letter-spacing:.3px;
-  }
-  .admin-id{ font-size:11px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-
   @media (prefers-reduced-motion: reduce){
     *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
   }
@@ -917,8 +749,6 @@
         <span class="knob"><i class="bi bi-sun-fill" id="themeIcon"></i></span>
       </button>
       <button class="icon-btn" id="installBtn" aria-label="Install app" style="display:none"><i class="bi bi-download"></i></button>
-      <button class="avatar-btn" id="accountBtn" aria-label="Account"><i class="bi bi-person-fill"></i></button>
-      <button class="icon-btn" id="adminBtn" aria-label="Users" style="display:none"><i class="bi bi-people-fill"></i></button>
       <button class="icon-btn" id="infoBtn" aria-label="How to play"><i class="bi bi-question-lg"></i></button>
     </div>
   </header>
@@ -1046,58 +876,6 @@
   </div>
 </div>
 
-<!-- Login sheet — opened manually from the top-bar account button -->
-<div class="sheet-overlay" id="loginSheet">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <h2>Sign in to play</h2>
-    <p style="text-align:center">You need to sign in before you can play Tower.</p>
-    <div class="login-providers">
-      <button class="provider-btn google" id="googleLoginBtn" aria-label="Sign in with Google"><i class="bi bi-google"></i></button>
-    </div>
-    <p id="loginStatus" style="text-align:center;font-size:12.5px;color:var(--danger);min-height:16px;margin-top:10px;"></p>
-  </div>
-</div>
-
-<!-- Account sheet -->
-<div class="sheet-overlay" id="accountSheet">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="account-header">
-      <button class="logout-btn" id="logoutBtn" aria-label="Log out"><i class="bi bi-box-arrow-right"></i></button>
-    </div>
-    <div class="account-center">
-      <div class="account-avatar-lg" id="accountAvatar"><i class="bi bi-person-fill"></i></div>
-      <div class="account-name" id="accountName">–</div>
-      <div class="account-email" id="accountEmail">–</div>
-    </div>
-    <div id="yourLevelsSection">
-      <h2 style="margin-top:18px;">Your Levels</h2>
-      <div id="yourLevelsList"></div>
-    </div>
-    <div id="accountMembersSection" style="display:none;">
-      <h2 style="margin-top:18px;">Members <span id="accountMemberCount" style="color:var(--text-muted);font-weight:500;font-size:14px;"></span></h2>
-      <div id="accountMemberList"></div>
-    </div>
-    <div class="sheet-actions">
-      <button class="sheet-btn ghost" id="accountCloseBtn">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- Admin: usage view (founder account only) -->
-<div class="sheet-overlay" id="adminSheet">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <h2>Users <span id="adminCount" style="color:var(--text-muted);font-weight:500;font-size:14px;"></span></h2>
-    <p style="text-align:center;font-size:11.5px;color:var(--text-muted);margin-top:-6px;">View only — founder access cannot edit any player's scores.</p>
-    <div id="adminList"></div>
-    <div class="sheet-actions">
-      <button class="sheet-btn ghost" id="adminCloseBtn">Close</button>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
   "use strict";
@@ -1136,7 +914,7 @@
   let timerStarted = false;
   let bestByDifficulty = {};
   let bestTimeByDifficulty = {};
-  let levelWins = {};      // { 3: winsAtEasy, 4: winsAtMedium, ... } — loaded from / saved to Firestore
+  let levelWins = {};      // per-session only; nothing is stored
   let locked = false;
   let pendingConfirmAction = null;
   let moveHistory = []; // stack of {from, to} peg indices — powers the one-step undo button
@@ -1276,15 +1054,6 @@
     toastTimer = setTimeout(()=> toastEl.classList.remove('show'), 1800);
   }
 
-  // Call before any gated action; returns true (and shows a prompt) if the
-  // user isn't signed in yet, so the caller can bail out.
-  function requireLogin(){
-    if(currentUser) return false;
-    showToast('Login to play');
-    openSheet(loginSheet);
-    return true;
-  }
-
   // ---------------- AUDIO ----------------
   let audioCtx = null;
   function ctx(){
@@ -1333,7 +1102,6 @@
   }
   segBtns.forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      if(requireLogin()) return;
       const val = parseInt(btn.dataset.value,10);
       if(val === numBlades) return;
       if(moves > 0){
@@ -1448,7 +1216,6 @@
 
   function handlePegClick(idx){
     if(locked) return;
-    if(requireLogin()) return; // must be signed in to play
 
     if(selected === null){
       if(pegs[idx].length === 0) return;
@@ -1552,11 +1319,8 @@
       const isNewBestTime = prevBestTime === undefined || seconds < prevBestTime;
       if(isNewBestTime) bestTimeByDifficulty[numBlades] = seconds;
 
-      saveWinToFirestore(numBlades, isNewBest, isNewBestTime);
-
       renderStats();
       updateBestNote();
-      renderYourLevels();
       playWinSound();
       haptic([10,40,10,40,20]);
       fireWinConfetti();
@@ -1723,7 +1487,6 @@
 
   // ---------------- BOTTOM BAR ----------------
   document.getElementById('newGameBtn').addEventListener('click', ()=>{
-    if(requireLogin()) return;
     if(moves > 0 && !locked){
       askConfirm('Start a new game?', 'Your current run will be reset.', initGame);
     } else {
@@ -1731,7 +1494,6 @@
     }
   });
   document.getElementById('resetIconBtn').addEventListener('click', ()=>{
-    if(requireLogin()) return;
     undoLastMove();
   });
 
@@ -1745,354 +1507,10 @@
     haptic(4);
   });
 
-  // ---------------- AUTH (Firebase) ----------------
-  //
-  // DATA MODEL: users/{uid} = {
-  //   name, email, photoURL, lastLogin,
-  //   levels: {
-  //     "3": { wins, bestMoves, bestTime, lastPlayed },   // Easy
-  //     "4": { ... },                                     // Medium
-  //     "5": { ... },                                     // Hard
-  //     "6": { ... },                                     // Expert
-  //     "7": { ... }                                      // Master
-  //   }
-  // }
-  //
-  // IMPORTANT — client code alone can't enforce "founder can view but not
-  // write": anyone can open dev tools and call Firestore directly. To make
-  // this a real rule, set the following in Firebase Console →
-  // Firestore Database → Rules:
-  //
-  //   rules_version = '2';
-  //   service cloud.firestore {
-  //     match /databases/{database}/documents {
-  //       match /users/{userId} {
-  //         allow read: if request.auth != null; // any signed-in user (incl. founder) can view
-  //         allow write: if request.auth != null && request.auth.uid == userId; // only the owner can write their own doc
-  //       }
-  //     }
-  //   }
-  //
-  // Fill in your Firebase project config below (Firebase console → Project settings).
-  const firebaseConfig = {
-  apiKey: "AIzaSyBYIyLhuI7muUpuJzH2jvG7LJbd0zMcNqQ",
-  authDomain: "microintel-tower.firebaseapp.com",
-  projectId: "microintel-tower",
-  storageBucket: "microintel-tower.firebasestorage.app",
-  messagingSenderId: "671029229575",
-  appId: "1:671029229575:web:1146f0ddb4f225dad792a2"
-  };
-  
-
-  const loginSheet = document.getElementById('loginSheet');
-  const accountSheet = document.getElementById('accountSheet');
-  const accountBtn = document.getElementById('accountBtn');
-  const accountAvatar = document.getElementById('accountAvatar');
-  const accountName = document.getElementById('accountName');
-  const accountEmail = document.getElementById('accountEmail');
-  const accountMemberList = document.getElementById('accountMemberList');
-  const accountMemberCount = document.getElementById('accountMemberCount');
-  const accountMembersSection = document.getElementById('accountMembersSection');
-
-  let auth = null;
-  let db = null;
-  let currentUser = null;
-  const loginStatus = document.getElementById('loginStatus');
-
-  function setLoginStatus(msg){
-    if(loginStatus) loginStatus.textContent = msg || '';
+  // ---------------- OFFLINE ----------------
+  if('serviceWorker' in navigator && location.protocol !== 'file:'){
+    window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
   }
-
-  try{
-    if(location.protocol === 'file:'){
-      setLoginStatus('This page is open as a local file (file://). Firebase sign-in only works when served over http/https — host it (e.g. Firebase Hosting, or a local server) and open it from that URL.');
-    }
-  }catch(e){}
-
-  try{
-    if(window.firebase && firebaseConfig.apiKey !== "YOUR_API_KEY"){
-      firebase.initializeApp(firebaseConfig);
-      auth = firebase.auth();
-      db = firebase.firestore();
-    } else if(!window.firebase){
-      setLoginStatus('Firebase SDK failed to load (check your internet connection or ad-blocker).');
-    }
-  }catch(e){
-    console.warn('Firebase not configured', e);
-    setLoginStatus('Sign-in is unavailable right now. Please try again later.');
-  }
-
-  function renderAccountBtn(){
-    if(currentUser){
-      accountBtn.classList.remove('needs-login');
-      accountBtn.setAttribute('aria-label', 'Account');
-      accountBtn.innerHTML = currentUser.photoURL
-        ? '<img src="' + currentUser.photoURL + '" alt="">'
-        : '<i class="bi bi-person-fill"></i>';
-    } else {
-      accountBtn.classList.add('needs-login');
-      accountBtn.setAttribute('aria-label', 'Log in');
-      accountBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i>';
-    }
-  }
-
-  function renderAccountSheet(){
-    if(!currentUser) return;
-    accountName.textContent = currentUser.displayName || 'No name';
-    accountEmail.textContent = currentUser.email || '';
-    accountAvatar.innerHTML = currentUser.photoURL
-      ? '<img src="' + currentUser.photoURL + '" alt="">'
-      : '<i class="bi bi-person-fill"></i>';
-  }
-
-  // Only the signed-in user's own login details (name, email, photo) are
-  // ever written — never any other user's data, and no game data.
-  async function saveOwnLoginDetails(user){
-    if(!db) return;
-    try{
-      await db.collection('users').doc(user.uid).set({
-        name: user.displayName || null,
-        email: user.email || null,
-        photoURL: user.photoURL || null,
-        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    }catch(e){ console.warn('Could not save login details', e); }
-  }
-
-  // Increment this player's win count for the given level (numBlades) and,
-  // if applicable, update their best-moves / best-time for that level.
-  // Only ever writes to the signed-in user's OWN document.
-  // NOTE: must use update() (not set/merge) so the dot-path keys below are
-  // parsed as a nested "levels.<n>.wins" field rather than a literal
-  // top-level field name containing dots.
-  async function saveWinToFirestore(level, isNewBest, isNewBestTime){
-    if(!db || !currentUser) return;
-    const key = String(level);
-    const updates = {};
-    updates['levels.' + key + '.wins'] = firebase.firestore.FieldValue.increment(1);
-    updates['levels.' + key + '.lastPlayed'] = firebase.firestore.FieldValue.serverTimestamp();
-    if(isNewBest) updates['levels.' + key + '.bestMoves'] = moves;
-    if(isNewBestTime) updates['levels.' + key + '.bestTime'] = seconds;
-    const ref = db.collection('users').doc(currentUser.uid);
-    try{
-      await ref.update(updates);
-    }catch(e){
-      // Doc might not exist yet in a rare race — create it, then retry as a real update.
-      try{
-        await ref.set({}, { merge: true });
-        await ref.update(updates);
-      }catch(e2){ console.warn('Could not save level win', e2); }
-    }
-  }
-
-  // Loads this player's per-level wins / bests from their own Firestore doc.
-  async function loadUserLevelData(uid){
-    levelWins = {}; bestByDifficulty = {}; bestTimeByDifficulty = {}; wins = 0;
-    if(!db || !uid) { renderYourLevels(); renderStats(); updateBestNote(); return; }
-    try{
-      const doc = await db.collection('users').doc(uid).get();
-      const data = doc.exists ? (doc.data() || {}) : {};
-      const levels = data.levels || {};
-      LEVELS.forEach(n=>{
-        const lv = levels[String(n)] || {};
-        levelWins[n] = lv.wins || 0;
-        wins += levelWins[n];
-        if(lv.bestMoves !== undefined) bestByDifficulty[n] = lv.bestMoves;
-        if(lv.bestTime !== undefined) bestTimeByDifficulty[n] = lv.bestTime;
-      });
-    }catch(e){ console.warn('Could not load level data', e); }
-    renderYourLevels();
-    renderStats();
-    updateBestNote();
-  }
-
-  // Renders the "Your Levels" list in the account sheet — how many times
-  // this signed-in player has won at each difficulty.
-  function renderYourLevels(){
-    const list = document.getElementById('yourLevelsList');
-    if(!list) return;
-    list.innerHTML = '';
-    LEVELS.forEach(n=>{
-      const row = document.createElement('div');
-      row.className = 'level-row';
-      const w = levelWins[n] || 0;
-      const best = bestByDifficulty[n];
-      row.innerHTML =
-        '<div><div class="level-name">' + LEVEL_LABELS[n] + '</div>' +
-          '<div class="level-sub">' + n + ' blades' + (best ? ' · best ' + best + ' moves' : '') + '</div></div>' +
-        '<div class="level-wins">' + w + '<small>' + (w === 1 ? 'win' : 'wins') + '</small></div>';
-      list.appendChild(row);
-    });
-  }
-
-  async function signInWithGoogle(){
-    if(!auth){
-      setLoginStatus('Firebase isn\'t configured or failed to load — see message above.');
-      return;
-    }
-    setLoginStatus('Signing in…');
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try{
-      const result = await auth.signInWithPopup(provider);
-      await saveOwnLoginDetails(result.user);
-      setLoginStatus('');
-      closeSheet(loginSheet);
-    }catch(e){
-      console.warn('Sign-in failed', e);
-      const code = e && e.code ? e.code : '';
-      if(code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request'){
-        setLoginStatus('Popup was blocked — allow popups for this site, or trying redirect sign-in…');
-        try{ await auth.signInWithRedirect(provider); }
-        catch(e2){
-          console.warn('Redirect sign-in failed', e2);
-          setLoginStatus('Redirect sign-in also failed. Please try again.');
-        }
-      } else if(code === 'auth/unauthorized-domain'){
-        setLoginStatus('This domain isn\'t authorized in your Firebase project. Add it under Firebase Console → Authentication → Settings → Authorized domains.');
-      } else if(code === 'auth/popup-closed-by-user'){
-        setLoginStatus('Sign-in window was closed before completing.');
-      } else {
-        setLoginStatus('Sign-in failed. Please try again.');
-      }
-    }
-  }
-
-  const ADMIN_EMAIL = 'pavan20051024@gmail.com';
-  const adminBtn = document.getElementById('adminBtn');
-  const adminSheet = document.getElementById('adminSheet');
-  const adminList = document.getElementById('adminList');
-  const adminCount = document.getElementById('adminCount');
-
-  function isAdmin(user){
-    return !!user && user.email === ADMIN_EMAIL && user.emailVerified === true;
-  }
-
-  async function loadUserList(listEl, countEl){
-    listEl.innerHTML = '<p style="text-align:center">Loading…</p>';
-    if(!db){
-      listEl.innerHTML = '<p style="text-align:center">Members list unavailable.</p>';
-      return;
-    }
-    try{
-      const snap = await db.collection('users').get();
-      if(countEl) countEl.textContent = '(' + snap.size + ')';
-      listEl.innerHTML = '';
-      snap.forEach(doc=>{
-        const d = doc.data();
-        const levels = d.levels || {};
-        let totalWins = 0;
-        const chips = LEVELS.map(n=>{
-          const lv = levels[String(n)] || {};
-          const w = lv.wins || 0;
-          totalWins += w;
-          return '<span class="admin-level-chip">' + LEVEL_LABELS[n] + ' <b>' + w + '</b></span>';
-        }).join('');
-        const row = document.createElement('div');
-        row.className = 'admin-row';
-        row.innerHTML =
-          '<div class="admin-avatar">' + (d.photoURL ? '<img src="'+d.photoURL+'" alt="">' : '<i class="bi bi-person-fill"></i>') + '</div>' +
-          '<div class="admin-info">' +
-            '<div class="admin-name">' + (d.name ? escapeHtml(d.name) : 'No name') + '</div>' +
-            '<div class="admin-levels" style="display:none;">' + chips + '</div>' +
-          '</div>' +
-          '<div class="admin-total" style="display:none;">' + totalWins + ' win' + (totalWins === 1 ? '' : 's') + '</div>' +
-          '<i class="bi bi-chevron-down admin-chevron"></i>';
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', ()=>{
-          const isOpen = row.classList.toggle('open');
-          row.querySelector('.admin-levels').style.display = isOpen ? 'flex' : 'none';
-          row.querySelector('.admin-total').style.display = isOpen ? 'block' : 'none';
-        });
-        listEl.appendChild(row);
-      });
-      if(snap.empty) listEl.innerHTML = '<p style="text-align:center">No members yet.</p>';
-    }catch(e){
-      listEl.innerHTML = '<p style="text-align:center">Could not load members.</p>';
-      console.warn('Member list load failed', e);
-    }
-  }
-
-  async function loadAdminUsers(){
-    await loadUserList(adminList, adminCount);
-  }
-
-  function escapeHtml(s){
-    const d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-  }
-
-  adminBtn.addEventListener('click', ()=>{
-    if(!isAdmin(currentUser)) return;
-    haptic(4);
-    openSheet(adminSheet);
-    loadAdminUsers();
-  });
-  document.getElementById('adminCloseBtn').addEventListener('click', ()=> closeSheet(adminSheet));
-  adminSheet.addEventListener('click', (e)=>{ if(e.target === adminSheet) closeSheet(adminSheet); });
-
-
-  document.getElementById('googleLoginBtn').addEventListener('click', signInWithGoogle);
-  document.getElementById('accountCloseBtn').addEventListener('click', ()=> closeSheet(accountSheet));
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{
-    closeSheet(accountSheet);
-    askConfirm('Log out?', 'You\'ll need to sign in again to keep playing.', async ()=>{
-      if(auth) await auth.signOut();
-    }, ()=>{
-      openSheet(accountSheet);
-    });
-  });
-
-  accountBtn.addEventListener('click', ()=>{
-    haptic(4);
-    if(!currentUser){
-      setLoginStatus('');
-      openSheet(loginSheet);
-      return;
-    }
-    renderAccountSheet();
-    openSheet(accountSheet);
-    if(isAdmin(currentUser)){
-      accountMembersSection.style.display = '';
-      loadUserList(accountMemberList, accountMemberCount);
-    } else {
-      accountMembersSection.style.display = 'none';
-    }
-  });
-
-  accountSheet.addEventListener('click', (e)=>{ if(e.target === accountSheet) closeSheet(accountSheet); });
-  loginSheet.addEventListener('click', (e)=>{ if(e.target === loginSheet) closeSheet(loginSheet); });
-
-  if(auth){
-    auth.getRedirectResult().then((result)=>{
-      if(result && result.user){
-        saveOwnLoginDetails(result.user);
-        loadUserLevelData(result.user.uid);
-      }
-    }).catch((e)=>{
-      console.warn('Redirect result error', e);
-      setLoginStatus('Sign-in failed. Please try again.');
-    });
-    auth.onAuthStateChanged((user)=>{
-      currentUser = user;
-      renderAccountBtn();
-      adminBtn.style.display = isAdmin(user) ? 'flex' : 'none';
-      if(user){
-        renderAccountSheet();
-        closeSheet(loginSheet);
-        loadUserLevelData(user.uid);
-      } else {
-        closeSheet(accountSheet);
-        closeSheet(adminSheet);
-        levelWins = {}; bestByDifficulty = {}; bestTimeByDifficulty = {}; wins = 0;
-        renderYourLevels();
-        renderStats();
-        updateBestNote();
-      }
-    });
-  }
-  // If Firebase isn't configured, the gate stays up (game intentionally
-  // stays locked) until a valid firebaseConfig is added above.
 
   // ---------------- INIT ----------------
   initGame();
