@@ -440,6 +440,7 @@
     flex-shrink:0;
   }
   .bb-icon:active{ transform:scale(.88); }
+  .bb-icon.solving{ background:var(--accent); color:var(--accent-ink); }
 
   .bb-primary{
     flex:1;
@@ -793,6 +794,7 @@
   <div class="bottombar">
     <button class="bb-icon" id="resetIconBtn" aria-label="Undo last move"><i class="bi bi-arrow-90deg-left"></i></button>
     <button class="bb-primary" id="newGameBtn"><i class="bi bi-play-fill"></i> New Game</button>
+    <button class="bb-icon" id="solveBtn" aria-label="Auto solve"><i class="bi bi-magic"></i></button>
   </div>
 
   <div class="credit">Tower · by Microintel</div>
@@ -1117,6 +1119,7 @@
 
   // ---------------- GAME LOGIC ----------------
   function initGame(){
+    stopAutoSolve(true);
     pegs = [[], [], []];
     for(let i = numBlades; i >= 1; i--){ pegs[0].push(i); }
     selected = null;
@@ -1262,6 +1265,7 @@
   // came from and drops the move count by one. Does not touch the timer
   // or wins, and does nothing once the puzzle is already solved.
   function undoLastMove(){
+    if(autoSolving) return;
     if(locked){ showToast('Already solved — start a new game'); return; }
     if(moveHistory.length === 0){ showToast('No moves to undo'); return; }
     const last = moveHistory.pop();
@@ -1272,6 +1276,89 @@
     renderStats();
     renderBoard();
     haptic(6);
+  }
+
+  // ---------------- AUTO SOLVE ----------------
+  // Solves from whatever the current position is, one visible move at a time
+  // (lift the disc, then drop it). Does not count as a win or a best score.
+  const SOLVE_STEP_MS = 800;
+  const solveBtn = document.getElementById('solveBtn');
+  let autoSolving = false;
+  let autoTimer = null;
+
+  function buildSolution(){
+    const pos = {};
+    pegs.forEach((stack, p)=> stack.forEach(d => { pos[d] = p; }));
+    const list = [];
+    (function go(d, target){
+      if(d === 0) return;
+      if(pos[d] === target){ go(d - 1, target); return; }
+      const other = 3 - pos[d] - target;
+      go(d - 1, other);
+      list.push([pos[d], target]);
+      pos[d] = target;
+      go(d - 1, target);
+    })(numBlades, 2);
+    return list;
+  }
+
+  function stopAutoSolve(silent){
+    if(!autoSolving) return;
+    autoSolving = false;
+    clearTimeout(autoTimer);
+    solveBtn.classList.remove('solving');
+    solveBtn.innerHTML = '<i class="bi bi-magic"></i>';
+    solveBtn.setAttribute('aria-label', 'Auto solve');
+    if(!silent){
+      locked = false;
+      selected = null;
+      renderBoard();
+    }
+  }
+
+  function startAutoSolve(){
+    if(autoSolving){ stopAutoSolve(); return; }
+    if(locked || pegs[2].length === numBlades){ showToast('Already solved — start a new game'); return; }
+    const steps = buildSolution();
+    if(!steps.length) return;
+    autoSolving = true;
+    locked = true;
+    selected = null;
+    renderBoard();
+    solveBtn.classList.add('solving');
+    solveBtn.innerHTML = '<i class="bi bi-stop-fill"></i>';
+    solveBtn.setAttribute('aria-label', 'Stop auto solve');
+    haptic(6);
+    let i = 0;
+    const lift = ()=>{
+      if(!autoSolving) return;
+      if(i >= steps.length){ finish(); return; }
+      selected = steps[i][0];
+      renderBoard();
+      autoTimer = setTimeout(drop, SOLVE_STEP_MS / 2);
+    };
+    const drop = ()=>{
+      if(!autoSolving) return;
+      const [from, to] = steps[i++];
+      pegs[to].push(pegs[from].pop());
+      moveHistory.push({ from, to });
+      moves++;
+      selected = null;
+      playMoveSound();
+      renderStats();
+      renderBoard();
+      flashLanding(to);
+      autoTimer = setTimeout(lift, SOLVE_STEP_MS / 2);
+    };
+    const finish = ()=>{
+      stopAutoSolve(true);
+      clearInterval(timerInterval);
+      locked = true;
+      playWinSound();
+      haptic([10,40,10]);
+      showToast('Solved automatically');
+    };
+    autoTimer = setTimeout(lift, 250);
   }
 
   function flashLanding(idx){
@@ -1493,6 +1580,7 @@
       initGame();
     }
   });
+  solveBtn.addEventListener('click', startAutoSolve);
   document.getElementById('resetIconBtn').addEventListener('click', ()=>{
     undoLastMove();
   });
